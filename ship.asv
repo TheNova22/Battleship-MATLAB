@@ -1,0 +1,325 @@
+% sea1 = zeros(10,10);
+% sea2 = zeros(10,10);
+% global shipAdded;
+% shipAdded = {0,0};
+% global points;
+% points = {0,0};
+p1 = Player('Player 1',zeros(10,10),Ship(1,[]),0,[],[]);
+p2 = Player('Player 2',zeros(10,10),Ship(1,[]),0,[],[]);
+turn = 0;
+%% 
+p1 = seaFight(0,'Insert the ships',p1, p2);
+p2 = seaFight(0,'Insert the ships',p2, p1);
+while p1.ships.blocks > 0 || p2.ships.blocks > 0
+    [p1,p2] = seaFight(1,'Destroy enemy ships',p1, p2);
+    [p2,p1] = seaFight(1,'Destroy enemy ships',p2, p1);
+end
+% global sea;
+% sea = sea1;
+% tsunamisData(turn, 0, 'Insert the ships');
+% ships = shipAdded;
+% sea1 = sea
+% turn = turn + 1;
+% sea = sea2;
+% tsunamisData(turn, 0, 'Insert the ships');
+% turn = turn + 1;
+% sea2 = sea
+% while ~isequal(sea1, zeros(10,10)) || ~isequal(sea2, zeros(10,10))
+%     if mod(turn,2) == 0
+%         sea = sea1;
+%         tsunamisData(turn, 1, 'Mine the ships!');
+%         sea1 = sea
+%     end
+%     if mod(turn,2) == 1
+%         sea = sea2;
+%         tsunamisData(turn, 1, 'Mine the ships!');
+%         sea2 = sea
+%     end
+% end
+
+
+%% 
+function [obj1,obj2] = seaFight(type, text, player, opponent)
+    global ships;
+    ships = {'Carrier','Battleship','Cruiser','Submarine','Destroyer'}';
+    global shipSizes;
+    shipSizes = {5,4,3,3,2};
+
+    % Create UI figure
+    fig = uifigure;
+    fig.Position(3:4) = [900 800];
+    % Create table UI component
+    uit = uitable(fig,'ColumnWidth',{'2x','2x','2x'},'FontSize', 30);
+    s = uistyle('BackgroundColor','cyan','HorizontalAlignment','center');
+    addStyle(uit,s); 
+    uit.Data = player.sea;
+    uit.Position(3:4) = [800 550];
+    uit.CellSelectionCallback = @data_uitable_CellSelectionCallback;
+    info = uitable(fig,'ColumnWidth',{60}, 'ColumnName',{'Turn'});
+    data = {player.name};
+    info.Data = data;
+    if type == 1
+        info.Data = zeros(10,10);
+    end
+    info.Position(1:4) = [50 600 100 50];
+    if type == 1
+        sz = size(player.hit);
+        if sz(1) > 1
+            for i = 1:sz(1)
+                s2 = uistyle('BackgroundColor','yellow');
+                addStyle(uit,s2,'cell',[player.hit(i,1),player.hit(i,2)]);
+            end
+        end
+        sz = size(player.miss);
+        if sz(1) > 1
+            for i = 1:sz(1)
+                s2 = uistyle('BackgroundColor','red');
+                addStyle(uit,s2,'cell',[player.miss(i,1),player.miss(i,2)]);
+            end
+        end
+    end
+    info2 = uitable(fig, 'ColumnName',{'Points'});
+    data2 = player.points;
+    info2.Data = data2;
+    info2.Position(1:4) = [300 600 100 50];
+    s = uistyle('HorizontalAlignment','left');
+    addStyle(info2,s); 
+    details = uitable(fig,'ColumnWidth',{120}, 'ColumnName',{'Info'});
+    deetData = {text};
+    details.Data = deetData;
+    details.Position(1:4) = [20 700 150 50];
+    s = uistyle('HorizontalAlignment','left');
+    addStyle(details,s); 
+    global done;
+    done = 0;
+    if type == 0
+        ax = uitable(fig,'ColumnWidth',{50}, 'ColumnName',{'Axis'});
+        global isHoriz;
+        isHoriz = 1;
+        axData = {'H','V'};
+        ax.Data = axData';
+        ax.Position(1:4) = [700 600 75 75];
+        s = uistyle('HorizontalAlignment','left');
+        addStyle(ax,s); 
+        s2 = uistyle('BackgroundColor','green');
+        addStyle(ax,s2,'cell',[1,1]);
+        ax.CellSelectionCallback = @data_axtable_CellSelectionCallback;
+    end
+    if type == 0
+        shipTable = uitable(fig,'ColumnWidth',{120}, 'ColumnName',{'Ships'});
+        shipTable.Data = ships;
+        shipTable.Position(1:4) = [500 620 120 150];
+        global shipSelected;
+        shipSelected = 1;
+        s = uistyle('HorizontalAlignment','left');
+        addStyle(shipTable,s); 
+        s2 = uistyle('BackgroundColor','green');
+        addStyle(shipTable,s2,'cell',[1,1]);
+        shipTable.CellSelectionCallback = @data_shiptable_CellSelectionCallback;
+    end
+    function data_shiptable_CellSelectionCallback(hObject, eventdata, handles)
+           handles.datatable_row = eventdata.Indices(1);
+           handles.datatable_col = eventdata.Indices(2);
+           row = handles.datatable_row;
+           col = handles.datatable_col;
+           guidata(hObject, handles);
+           s2 = uistyle('BackgroundColor','white');
+           addStyle(shipTable,s2,'cell',[shipSelected,1]);
+           s2 = uistyle('BackgroundColor','green');
+           addStyle(shipTable,s2,'cell',[row,col]);
+           shipSelected = row;
+    end
+
+    function data_axtable_CellSelectionCallback(hObject, eventdata, handles)
+           handles.datatable_row = eventdata.Indices(1);
+           handles.datatable_col = eventdata.Indices(2);
+           row = handles.datatable_row;
+           col = handles.datatable_col;
+           guidata(hObject, handles);
+           if row == 1 && col == 1
+               isHoriz = 1;
+               s2 = uistyle('BackgroundColor','white');
+               addStyle(ax,s2,'cell',[2,1]);
+               s2 = uistyle('BackgroundColor','green');
+               addStyle(ax,s2,'cell',[1,1]);
+           end
+           if row == 2 && col == 1
+               isHoriz = 0;
+               s2 = uistyle('BackgroundColor','white');
+               addStyle(ax,s2,'cell',[1,1]);
+               s2 = uistyle('BackgroundColor','green');
+               addStyle(ax,s2,'cell',[2,1]);
+           end
+    end
+
+
+     function data_uitable_CellSelectionCallback(hObject, eventdata, handles)
+       handles.datatable_row = eventdata.Indices(1);
+       handles.datatable_col = eventdata.Indices(2);
+       row = handles.datatable_row(1);
+       col = handles.datatable_col(1);
+       guidata(hObject, handles);
+       [m, n] = size(player.sea);
+       if type == 0 && player.sea(row,col) == 0
+           a = cell2mat(shipSizes(shipSelected)) - 1;
+           if isHoriz && col + a <= n
+               player.sea(row,col:col+a) = shipSelected;
+               indices = [0 0];
+               for i = col:col+a
+                 s2 = uistyle('BackgroundColor','green');
+                 addStyle(uit,s2,'cell',[row,i]);
+                 indices = [indices ; [row, i]];
+               end
+               indices = indices(2:end, 1:end);
+               uit.Data = player.sea;
+               player.ships = [];
+               player.ships = [player.ships Ship(shipSelected,indices)];
+%                player.ships = player.ships + 1;
+           end
+         if ~ isHoriz && row + a <= m
+             player.sea(row:row+a,col) = shipSelected;
+             indices = [0 0];
+             for i = row:row+a
+                 s2 = uistyle('BackgroundColor','green');
+                 addStyle(uit,s2,'cell',[i,col]);
+                 indices = [indices ; [i, col]];
+             end
+             indices = indices(2:end, 1:end);
+             uit.Data = player.sea;
+             [~,n] = size(player.ships);
+             if n >= 1
+                player.ships = [player.ships, [Ship(shipSelected,indices)]];
+             end
+             if n < 1
+                player.ships = [Ship(shipSelected,indices)];
+             end
+         end
+       end
+         if type == 1
+             global shipList;
+             shipList = opponent.ships;
+             result = battleshipShotCheck(opponent.sea,row,col);
+             if result == 0 && done == 0
+                 [m,~] = size(player.miss);
+                 if m >= 1
+                    player.miss = [player.miss; [row, col]];
+                 end
+                 if m < 1
+                     player.miss = [row,col];
+                 end
+
+                 s2 = uistyle('BackgroundColor','red');
+                 addStyle(uit,s2,'cell',[row,col]);
+                 done = 1;
+             end
+             if result > 0 && done == 0
+                 [m,~] = size(player.hit);
+                 if m >= 1
+                    player.hit = [player.hit; [row, col]];
+                 end
+                 if m < 1
+                     player.hit = [row,col];
+                 end
+                 s2 = uistyle('BackgroundColor','yellow');
+                 addStyle(uit,s2,'cell',[row,col]);
+                 player.points = player.points + result;
+                 info2.Data = player.points;
+             end
+%             obj1 = player; 
+%             obj2 = opponent;
+%             close(fig);
+
+
+         end
+%             result = battleshipShotCheck(sea,row,col);
+%             if result > 0
+%                 sea(row,col) = 1;
+%                 s2 = uistyle('BackgroundColor','yellow');
+%                 addStyle(uit,s2,'cell',[row,col]);
+%                 if mod(turn,2) == 0
+%                     shipAdded = {cell2mat(shipAdded(1)) + result, cell2mat(shipAdded(2))};
+%                 end
+%                 if mod(turn,2) == 1
+%                     shipAdded = {cell2mat(shipAdded(1)), cell2mat(shipAdded(2)) + result};
+%                 end
+%             end
+%         end
+     end
+    uiwait(fig);
+    obj1 = player; 
+    obj2 = opponent;
+end
+%% 
+function [outcome] = battleshipShotCheck(battleMatrix, rowShot, colShot)
+% Outcome will tell us whether we have shot a ship of a particular type or
+% if we missed
+    global shipList;
+    s = size(shipList);
+    shipListExists = s(1) > 0;
+    outcome = 0;
+    iterate = true;
+    [m,n] = size(battleMatrix);
+    if (m ~= 10) && (n ~= 10)
+        outcome = -99;
+    end
+    if (rowShot < 1 || rowShot > m || colShot < 1 || colShot > n )
+        outcome = -97;
+    end
+    for i = 1:size(battleMatrix,1)
+         for j = 1:size(battleMatrix,1)
+            isCorrect = ismember(battleMatrix(i,j),[0 1 2 3 4 5]);
+            if ~isCorrect
+                outcome = -98;
+                iterate = false;
+                break
+            end
+            if iterate == false
+                break
+            end
+        end
+    end 
+
+    if outcome == 0 % meaning no initial errors we have found
+       outcome = battleMatrix(rowShot,colShot);
+    end
+%     this is for the visualisation we have developed. if one decides to
+%     just use the function then the second if block will execute
+    if outcome > 0  && shipListExists
+        for ship = shipList
+            if ship.type == outcome && iterate
+                for i = 1: size(ship.indices,1)
+                    rowi = ship.indices(i,1);
+                    rowj = ship.indices(i,2);
+                    if rowi == rowShot && rowj == rowShot
+                        ship.Subtract()
+                        if ship.blocks == 0
+                            outcome = outcome + 100;
+                        end
+%                       meaning done with iteration. stop iterating.
+                        iterate = false;
+                    end
+                end
+            end
+        end
+    end
+   
+%     count == 0 means that we did not use the initial condition.
+    if outcome > 0 && iterate
+        for i = 1:size(battleMatrix,1)
+            for j = 1:size(battleMatrix,1)
+                if ~((colShot == j) && (rowShot == i)) && (battleMatrix(i,j) == outcome)
+%                     if you found another one then stop iterating.
+                    iterate = false;
+                    fprintf("iteration will stop now %d",outcome)
+                    break
+                end
+            if ~iterate
+                break
+            end
+            end
+        end
+        if outcome > 0  && iterate == true % meaning you destroyed the last part of a ship
+            outcome = outcome + 100;
+        end
+    end
+end
